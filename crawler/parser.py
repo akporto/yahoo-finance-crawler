@@ -1,71 +1,61 @@
 import logging
-from bs4 import BeautifulSoup
 from typing import Optional
+
 from crawler.models import StockData
 
 logger = logging.getLogger(__name__)
 
 
 class YahooFinanceParser:
-    """
-    Parses HTML content from Yahoo Finance and converts it into a StockData model.
-    """
+    """Transforms raw JSON quote records from the Screener API into StockData objects."""
 
-    @staticmethod
-    def parse(html_content: str, symbol: str) -> Optional[StockData]:
+    @classmethod
+    def parse(cls, record: dict) -> Optional[StockData]:
         """
-        Extracts financial data from HTML and returns a validated StockData object.
-        Returns None if parsing fails or if blocked by CAPTCHA.
+        Returns a validated StockData or None if the record is incomplete or invalid.
+        Returning None allows the pipeline to skip bad records without interruption.
         """
-        if not html_content:
-            logger.warning(f"Empty HTML content provided for symbol: {symbol}")
+        if not record or not isinstance(record, dict):
             return None
 
-        # Detects possible scraping blocks (CAPTCHA / bot checkpoint)
-        html_lower = html_content.lower()
-        if "captcha" in html_lower or "bot checkpoint" in html_lower:
-            logger.error(f"Blocked by CAPTCHA for symbol: {symbol}. Scraping interrupted.")
+        symbol = record.get("symbol", "").strip()
+        if not symbol:
+            logger.warning("Record missing 'symbol'. Skipping.")
             return None
 
-        soup = BeautifulSoup(html_content, "html.parser")
+        name = (record.get("shortName") or record.get("longName") or "").strip()
+        if not name:
+            logger.warning(f"[{symbol}] Missing name. Skipping.")
+            return None
+
+        raw_price = record.get("regularMarketPrice")
+        if raw_price is None:
+            logger.warning(f"[{symbol}] Missing price. Skipping.")
+            return None
 
         try:
-            name_tag = soup.find("h1")
-            name = name_tag.text.strip() if name_tag else "Unknown"
+            price = float(raw_price)
+            if price < 0:
+                raise ValueError(f"Negative price: {price}")
+        except (TypeError, ValueError) as e:
+            logger.warning(f"[{symbol}] Invalid price '{raw_price}': {e}. Skipping.")
+            return None
 
-            price_tag = soup.find("fin-streamer", {"data-field": "regularMarketPrice"})
-            if not price_tag:
-                raise ValueError("Price element not found in HTML")
-            
-            price_str = price_tag.text.strip().replace(",", "")
-            price = float(price_str)
-
-            change_tag = soup.find("fin-streamer", {"data-field": "regularMarketChange"})
-            change = float(change_tag.text.strip().replace(",", "")) if change_tag else None
-
-            change_pct_tag = soup.find("fin-streamer", {"data-field": "regularMarketChangePercent"})
-            if change_pct_tag:
-                pct_str = (
-                    change_pct_tag.text
-                    .replace("(", "")
-                    .replace(")", "")
-                    .replace("%", "")
-                    .strip()
-                )
-                change_percent = float(pct_str)
-            else:
-                change_percent = None
-
-            logger.info(f"Parsed {symbol} | Price: {price}")
-            
+        try:
             return StockData(
                 symbol=symbol.upper(),
                 name=name,
                 price=price,
-                change=change,
-                change_percent=change_percent
+                change=cls._to_float(record.get("regularMarketChange")),
+                change_percent=cls._to_float(record.get("regularMarketChangePercent")),
             )
+        except ValueError as e:
+            logger.warning(f"[{symbol}] Validation failed: {e}. Skipping.")
+            return None
 
-        except (AttributeError, ValueError):
-            logger.exception(f"Failed to parse HTML for {symbol} | Possible layout change")
+    @staticmethod
+    def _to_float(value) -> Optional[float]:
+        try:
+            return float(value) if value is not None else None
+        except (TypeError, ValueError):
             return None
