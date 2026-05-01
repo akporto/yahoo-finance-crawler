@@ -62,12 +62,5 @@ class YahooSession:
             self.authenticate()
         return self._crumb
 
-    @property
-    def cookies(self):
-        return self._session.cookies
-
-    def get(self, url: str, **kwargs) -> requests.Response:
-        return self._session.get(url, **kwargs)
-
     def post(self, url: str, **kwargs) -> requests.Response:
         return self._session.post(url, **kwargs)

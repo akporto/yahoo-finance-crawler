@@ -83,7 +83,7 @@ class YahooFinanceScreenerClient:
     def _post_with_retry(self, payload: dict) -> dict:
         """
         Raises:
-            HTTPError: On 401/403 — stops immediately to avoid permanent block.
+            HTTPError: On 401/403 — stops immediately to avoid permanent IP block.
             RequestException: After all retries are exhausted.
         """
         crumb = self._session.crumb
@@ -96,20 +96,28 @@ class YahooFinanceScreenerClient:
                     json=payload,
                     timeout=20,
                 )
-
-                if response.status_code in (401, 403):
-                    raise HTTPError(
-                        f"Access denied: {response.status_code}", response=response
-                    )
-
-                response.raise_for_status()
-                return response.json()
-
             except RequestException as e:
                 logger.warning(f"Attempt {attempt}/{_MAX_RETRIES} failed: {e}")
                 if attempt == _MAX_RETRIES:
                     raise
                 time.sleep(2 ** (attempt - 1))
+                continue
+
+            if response.status_code in (401, 403):
+                raise HTTPError(
+                    f"Access denied: {response.status_code}", response=response
+                )
+
+            try:
+                response.raise_for_status()
+            except RequestException as e:
+                logger.warning(f"Attempt {attempt}/{_MAX_RETRIES} failed: {e}")
+                if attempt == _MAX_RETRIES:
+                    raise
+                time.sleep(2 ** (attempt - 1))
+                continue
+
+            return response.json()
 
     def fetch_all(self, region_code: str) -> Iterator[dict]:
         """Lazily yields all equity records for a region, paginating automatically."""

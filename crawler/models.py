@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -9,8 +8,6 @@ class StockData:
     symbol: str
     name: str
     price: float
-    change: Optional[float] = None
-    change_percent: Optional[float] = None
 
     def __post_init__(self):
         if not self.symbol or not self.symbol.strip():

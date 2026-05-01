@@ -46,16 +46,7 @@ class YahooFinanceParser:
                 symbol=symbol.upper(),
                 name=name,
                 price=price,
-                change=cls._to_float(record.get("regularMarketChange")),
-                change_percent=cls._to_float(record.get("regularMarketChangePercent")),
             )
         except ValueError as e:
             logger.warning(f"[{symbol}] Validation failed: {e}. Skipping.")
-            return None
-
-    @staticmethod
-    def _to_float(value) -> Optional[float]:
-        try:
-            return float(value) if value is not None else None
-        except (TypeError, ValueError):
             return None

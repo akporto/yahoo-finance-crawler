@@ -11,7 +11,7 @@ from crawler.session import YahooSession
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-_CSV_FIELDS = ["symbol", "name", "price", "change", "change_percent"]
+_CSV_FIELDS = ["symbol", "name", "price"]
 
 
 def export_to_csv(data: list[dict], filename: str) -> None:
@@ -21,9 +21,15 @@ def export_to_csv(data: list[dict], filename: str) -> None:
 
     try:
         with open(filename, mode="w", newline="", encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames=_CSV_FIELDS, extrasaction="ignore")
+            writer = csv.DictWriter(
+                file,
+                fieldnames=_CSV_FIELDS,
+                extrasaction="ignore",
+                quoting=csv.QUOTE_ALL,
+            )
             writer.writeheader()
-            writer.writerows(data)
+            for row in data:
+                writer.writerow({**row, "price": f"{row['price']:.2f}"})
         logger.info(f"Exported {len(data)} records to '{filename}'.")
     except OSError as e:
         logger.error(f"Failed to write CSV: {e}")
