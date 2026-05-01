@@ -11,8 +11,6 @@ _SCREENER_URL = "https://query2.finance.yahoo.com/v1/finance/screener"
 _PAGE_SIZE = 100
 _MAX_RETRIES = 3
 
-# Maps human-readable region names to Yahoo Finance region codes.
-# Accepts both full names ("Argentina") and ISO codes ("ar") in the CLI.
 REGION_MAP: dict[str, str] = {
     "argentina": "ar", "australia": "au", "austria": "at",
     "belgium": "be", "brazil": "br", "canada": "ca",
