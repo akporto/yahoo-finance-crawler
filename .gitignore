@@ -1,0 +1,20 @@
+# Ambiente Virtual
+venv/
+.env
+
+# Python caches
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Testes
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dados de saída (Output)
+*.csv
+*.json
+
+# VS Code
+.vscode/
