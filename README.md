@@ -241,6 +241,7 @@ Para evoluir este script para um ecossistema corporativo em nuvem, o caminho nat
 1. Substituir o acionamento manual por uma DAG em um orquestrador de pipelines, como **Apache Airflow** ou **AWS Step Functions**, com agendamento, retentativas e monitoramento centralizado.
 2. Migrar o armazenamento local em CSV para a nuvem, salvando os dados crus em formato **Parquet**, particionados por região e data de extração, no Amazon S3 como camada inicial do Data Lake.
 3. Integrar catálogo e consulta analítica com serviços gerenciados, usando o **AWS Glue Data Catalog** para metadados e o **Amazon Athena** para consultas serverless sobre os dados no S3, com consumo direto por ferramentas de BI como **Amazon QuickSight** ou **Tableau**.
+4. Adicionar uma camada de observabilidade com **logs estruturados em JSON** (via `python-json-logger`), métricas de execução (taxa de sucesso, latência média da API, registros extraídos por região) emitidas para **Amazon CloudWatch** ou **Datadog**, e alertas em falhas críticas como autenticação inválida e queda da API. Em ambiente orquestrado, essas métricas alimentariam dashboards de SLO/SLI da pipeline.
 
 ---
 
