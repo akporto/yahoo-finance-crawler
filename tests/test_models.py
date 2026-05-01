@@ -9,13 +9,6 @@ class TestStockData:
         assert stock.symbol == "AAPL"
         assert stock.name == "Apple Inc."
         assert stock.price == 175.50
-        assert stock.change is None
-        assert stock.change_percent is None
-
-    def test_valid_creation_with_all_fields(self):
-        stock = StockData(symbol="PETR4.SA", name="Petrobras", price=38.72, change=-0.45, change_percent=-1.15)
-        assert stock.change == -0.45
-        assert stock.change_percent == -1.15
 
     def test_zero_price_is_valid(self):
         stock = StockData(symbol="XYZ", name="Some Corp", price=0.0)

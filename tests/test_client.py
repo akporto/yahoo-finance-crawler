@@ -130,3 +130,29 @@ class TestYahooFinanceScreenerClient:
         with patch("crawler.client.time.sleep"):
             with pytest.raises(ConnectionError):
                 list(client.fetch_all("ar"))
+
+    def test_retries_on_non_401_403_http_error(self):
+        client, mock_session = self._make_client()
+
+        bad_response = MagicMock(status_code=500)
+        bad_response.raise_for_status.side_effect = HTTPError("server error", response=bad_response)
+        good_response = self._mock_response(
+            [{"symbol": "A", "shortName": "Alpha", "regularMarketPrice": 10.0}], total=1
+        )
+        mock_session.post.side_effect = [bad_response, good_response]
+
+        with patch("crawler.client.time.sleep"):
+            results = list(client.fetch_all("ar"))
+
+        assert len(results) == 1
+        assert mock_session.post.call_count == 2
+
+    def test_breaks_on_malformed_api_response(self):
+        client, mock_session = self._make_client()
+
+        malformed = MagicMock(status_code=200)
+        malformed.json.return_value = {"finance": {"result": []}}
+        mock_session.post.return_value = malformed
+
+        assert list(client.fetch_all("ar")) == []
+        assert mock_session.post.call_count == 1
